@@ -254,6 +254,34 @@ body {
 }
 .btn-generate:hover, .btn-generate:active { background: var(--navy-light); }
 .setup-note { font-size: 0.78rem; color: var(--gray-600); text-align: center; margin-top: 12px; }
+.load-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 22px 0 16px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gray-500);
+}
+.load-divider::before, .load-divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-300); }
+.btn-load {
+  width: 100%;
+  padding: 13px;
+  background: var(--white);
+  color: var(--navy);
+  border: 1.5px solid var(--navy);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 48px;
+  touch-action: manipulation;
+  transition: all 0.15s;
+}
+.btn-load:hover, .btn-load:active { background: var(--navy); color: var(--white); }
 
 /* ============================================================
    SURVEY SCREEN
@@ -752,6 +780,11 @@ body {
 
     <button type="button" class="btn-generate" id="btn-generate-survey">Generate Survey</button>
     <div class="setup-note">Items are drawn at random from each section of the selected regulation sets.</div>
+
+    <div class="load-divider"><span>or</span></div>
+    <button type="button" class="btn-load" id="btn-load-file">Load a Saved Survey</button>
+    <input type="file" id="inp-load-file" accept=".json,application/json" hidden>
+    <div class="setup-note">Continue a survey you saved to a file with Save to File.</div>
   </div>
 </div>
 
@@ -764,6 +797,7 @@ body {
     <div class="survey-actions">
       <button type="button" class="btn-sm btn-outline" id="btn-rerandomize">Re-randomize</button>
       <button type="button" class="btn-sm btn-outline" id="btn-back-setup">Back to Setup</button>
+      <button type="button" class="btn-sm btn-navy" id="btn-save-file">Save to File</button>
     </div>
   </div>
   <div class="print-controls">
@@ -1790,7 +1824,7 @@ function rerandomize() {
 }
 
 function backToSetup() {
-  if (!confirm('Return to setup? Current ratings will be lost.')) return;
+  if (!confirm('Return to setup? Current ratings will be lost.\n\nUse Save to File first if you want to keep this survey.')) return;
   clearDraft();
   syncSetupFromState();
   showScreen('setup-screen');
@@ -2378,8 +2412,77 @@ function removeDraftBanner() {
 }
 
 /* ============================================================
+   SAVE / LOAD FILE
+   A saved file holds the whole survey (items and responses), so
+   it can be reopened on any device, even after the item pools or
+   browser storage change.
+   ============================================================ */
+const SAVE_FORMAT = 'mock-lsc-survey';
+
+function saveToFile() {
+  const payload = {
+    format: SAVE_FORMAT,
+    site: CONFIG.draftKey,
+    communityName: communityName(),
+    savedAt: new Date().toISOString(),
+    survey: surveyState
+  };
+  const name = ['MockSurvey', communityName(), surveyState.date, timeStamp()].join('_')
+    .replace(/[^A-Za-z0-9_-]+/g, '-') + '.json';
+  const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function timeStamp() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0');
+}
+
+function loadFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let payload;
+    try { payload = JSON.parse(reader.result); } catch(e) { payload = null; }
+    const survey = payload && payload.format === SAVE_FORMAT ? payload.survey : null;
+    if (!survey || survey.v !== 2 || !Array.isArray(survey.items) || !survey.items.length || !survey.responses) {
+      alert('This file is not a saved mock survey.');
+      return;
+    }
+    if (payload.site !== CONFIG.draftKey || !findCommunity(survey.community)) {
+      alert('This survey was saved from a different site (' + (payload.communityName || survey.community || 'unknown community') + ') and can\'t be opened here.');
+      return;
+    }
+    survey.items.forEach(i => {
+      if (!survey.responses[i.id]) survey.responses[i.id] = { status:'', priority:'', notes:'' };
+    });
+    surveyState = survey;
+    removeDraftBanner();
+    saveDraft();
+    syncSetupFromState();
+    renderSurvey();
+    showScreen('survey-screen');
+    window.scrollTo(0, 0);
+  };
+  reader.onerror = () => alert('The file could not be read.');
+  reader.readAsText(file);
+}
+
+/* ============================================================
    INIT
    ============================================================ */
+document.getElementById('btn-save-file').addEventListener('click', saveToFile);
+document.getElementById('btn-load-file').addEventListener('click', () => document.getElementById('inp-load-file').click());
+document.getElementById('inp-load-file').addEventListener('change', e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (file) loadFromFile(file);
+});
 document.getElementById('section-tabs').addEventListener('click', e => {
   const tab = e.target.closest('.tab-btn');
   if (tab) switchTab(tab.dataset.section);
