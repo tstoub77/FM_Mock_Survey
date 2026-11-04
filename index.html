@@ -291,6 +291,26 @@ body {
 .btn-gold:hover, .btn-gold:active { background: var(--accent-btn-hover); }
 .btn-navy { background: var(--navy); color: var(--white); }
 .btn-navy:hover, .btn-navy:active { background: var(--navy-light); }
+.print-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 10px 18px;
+  margin-bottom: 16px;
+}
+.print-controls-label {
+  font-size: 0.80rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--navy-dark);
+}
+.print-controls .check-row { align-items: center; font-size: 0.87rem; }
+.print-controls .btn-sm { margin-left: auto; }
 .print-hint { display: none; font-size: 0.78rem; color: var(--gray-700); margin: -6px 0 14px; }
 .print-hint.visible { display: block; }
 
@@ -577,7 +597,51 @@ body {
   .sig-block { margin-bottom: 24pt; break-inside: avoid; }
   .sig-line { border-bottom: 1.5px solid #333; height: 28pt; margin-bottom: 4pt; width: 320pt; }
   .sig-sublabel { font-size: 8pt; color: #555; }
+
+  /* Watermark: fixed elements repeat on every printed page. */
+  .print-watermark {
+    display: block !important;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-35deg);
+    font-size: 36pt;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1.25;
+    text-align: center;
+    color: rgba(178, 31, 45, 0.13);
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  /* ---- Mock CMS-2567 layout ---- */
+  .f2567 { width: 100%; border-collapse: collapse; font-family: Arial, Helvetica, sans-serif; color: #000; table-layout: fixed; }
+  .f2567 thead { display: table-header-group; }
+  .f2567 th, .f2567 td { border: 1px solid #000; padding: 4pt 5pt; vertical-align: top; text-align: left; }
+  .f2567 .f-title td { border: none; padding: 0 0 6pt; }
+  .f2567 .f-title-main { font-size: 11pt; font-weight: 700; }
+  .f2567 .f-title-sub { font-size: 8pt; margin-top: 2pt; }
+  .f2567 .f-title-mock { font-size: 8pt; font-weight: 700; color: #B21F2D; text-align: right; white-space: nowrap; }
+  .f2567 .f-box-label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+  .f2567 .f-box-value { font-size: 9pt; min-height: 12pt; margin-top: 2pt; }
+  .f2567 .f-blank { border-bottom: 1px solid #999; height: 12pt; margin-top: 2pt; }
+  .f2567 .f-colhead th { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; background: #EEE; line-height: 1.3; }
+  .f2567 tbody td { font-size: 8.5pt; line-height: 1.45; }
+  .f2567 tbody tr { break-inside: auto; page-break-inside: auto; }
+  .f2567 .f-tag { font-weight: 700; word-break: break-word; }
+  .f2567 .f-req { font-weight: 700; margin-bottom: 4pt; }
+  .f2567 .f-evidence { margin-top: 5pt; }
+  .f2567 .f-notes { white-space: pre-wrap; margin-top: 2pt; }
+  .f2567 .f-poc-lines { height: 84pt; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 13pt, #BBB 13pt, #BBB 14pt); }
+  .f2567 .f-date { font-size: 8pt; }
+  .f2567 .f-date-hint { font-size: 6.5pt; color: #555; margin-top: 2pt; }
+  .f2567-sign { margin-top: 18pt; break-inside: avoid; display: flex; gap: 24pt; font-size: 7pt; }
+  .f2567-sign > div { flex: 1; }
+  .f2567-sign .sig-line { width: auto; height: 22pt; }
 }
+.print-watermark { display: none; }
 
 :root {
   --navy: #1B3A6B;
@@ -681,9 +745,13 @@ body {
     <div class="survey-actions">
       <button type="button" class="btn-sm btn-outline" id="btn-rerandomize">Re-randomize</button>
       <button type="button" class="btn-sm btn-outline" id="btn-back-setup">Back to Setup</button>
-      <button type="button" class="btn-sm btn-navy" id="btn-print-findings">Print Findings</button>
-      <button type="button" class="btn-sm btn-gold" id="btn-print-full">Print Full Report</button>
     </div>
+  </div>
+  <div class="print-controls">
+    <span class="print-controls-label">Print:</span>
+    <label class="check-row"><input type="checkbox" id="chk-print-full" checked><span>Full report</span></label>
+    <label class="check-row"><input type="checkbox" id="chk-print-2567" checked><span>Mock 2567 (failures only)</span></label>
+    <button type="button" class="btn-sm btn-gold" id="btn-print">Print</button>
   </div>
   <div class="print-hint" id="print-hint">Printing from the home-screen app may not open the print dialog. If nothing happens, open this page in Safari and print from there.</div>
 
@@ -1905,19 +1973,30 @@ function updateProgress() {
 }
 
 /* ============================================================
-   PRINT REPORT
-   mode: 'full' (every item) or 'findings' (deficiencies only)
+   PRINT
+   The full report and the mock 2567 can print separately or
+   together; every printed page carries the MOCK watermark.
    ============================================================ */
-function printReport(mode) {
+function printSelected() {
+  const wantFull = document.getElementById('chk-print-full').checked;
+  const want2567 = document.getElementById('chk-print-2567').checked;
+  if (!wantFull && !want2567) { alert('Choose the full report, the mock 2567, or both.'); return; }
+
   const items = surveyState.items;
   const t = tally(items);
-  const noPriority = items.filter(i => surveyState.responses[i.id].status === 'fail' && !surveyState.responses[i.id].priority).length;
+  const fails = itemsWithStatus('fail');
+  const noPriority = fails.filter(i => !surveyState.responses[i.id].priority).length;
+  const noNotes = fails.filter(i => !(surveyState.responses[i.id].notes || '').trim()).length;
   const warnings = [];
   if (t.open > 0)     warnings.push(t.open + ' item' + (t.open === 1 ? ' is' : 's are') + ' not rated');
   if (noPriority > 0) warnings.push(noPriority + ' failed item' + (noPriority === 1 ? ' has' : 's have') + ' no correction priority');
-  if (warnings.length && !confirm(warnings.join(' and ') + '.\n\nPrint the report anyway?')) return;
+  if (want2567 && noNotes > 0) warnings.push(noNotes + ' failed item' + (noNotes === 1 ? ' has' : 's have') + ' no observation notes for the 2567');
+  if (warnings.length && !confirm('- ' + warnings.join('\n- ') + '\n\nPrint anyway?')) return;
 
-  document.getElementById('report-print').innerHTML = buildReportHtml(mode, t, noPriority);
+  let html = '<div class="print-watermark">MOCK<br>INTERNAL USE ONLY</div>';
+  if (wantFull) html += buildReportHtml(t, noPriority);
+  if (want2567) html += build2567Html();
+  document.getElementById('report-print').innerHTML = html;
   document.getElementById('print-page-style').textContent = pageMarginCss();
   window.print();
 }
@@ -1950,13 +2029,13 @@ function regulatoryBasis() {
   return rows;
 }
 
-function buildReportHtml(mode, t, noPriority) {
+function buildReportHtml(t, noPriority) {
   const name = communityName();
   const comm = findCommunity(surveyState.community);
   const communityLabel = CONFIG.showCommunityAbbr && comm && comm.code !== comm.name ? name + ' (' + comm.code + ')' : name;
   const failRate = (t.pass + t.fail) > 0 ? ((t.fail / (t.pass + t.fail)) * 100).toFixed(1) : '0.0';
   const sections = surveySections();
-  const reportType = mode === 'full' ? 'Full Report' : 'Findings Report';
+  const reportType = 'Full Report';
   let html = '';
 
   /* Cover */
@@ -2023,13 +2102,10 @@ function buildReportHtml(mode, t, noPriority) {
   html += '</div>';
 
   /* Item detail */
-  const detailSections = sections
-    .map(s => ({ sec: s.sec, items: mode === 'full' ? s.items : s.items.filter(i => surveyState.responses[i.id].status === 'fail') }))
-    .filter(s => s.items.length > 0);
-  if (detailSections.length) {
+  if (sections.length) {
     html += '<div class="print-page">' + reportHeader(name);
-    html += '<div class="print-h2">' + (mode === 'full' ? 'Inspection Results — All Items' : 'Deficiency Detail') + '</div>';
-    detailSections.forEach(({ sec, items }) => {
+    html += '<div class="print-h2">Inspection Results — All Items</div>';
+    sections.forEach(({ sec, items }) => {
       html += '<div class="print-section-heading' + (sec.kind === 'etag' ? ' etag-heading' : sec.kind === 'state' ? ' state-heading' : '') + '">' +
         escapeHtml(sectionLabel(sec, surveyState.state)) + '</div>';
       items.forEach(i => { html += printItem(i, sec); });
@@ -2082,6 +2158,94 @@ function printItem(item, sec) {
       : '<div class="print-notes-empty">No observation notes recorded.</div>';
   }
   return html + '</div>';
+}
+
+/* ============================================================
+   MOCK 2567 — Statement of Deficiencies and Plan of Correction
+   One form per regulation set surveyed (federal and/or state),
+   failures only. The plan of correction column prints blank.
+   ============================================================ */
+const PRIORITY_DAYS = { 'Immediate': 0, '30-Day': 30, '90-Day': 90 };
+
+function build2567Html() {
+  const groups = [];
+  const surveyed = surveySections();
+  const fedItems = surveyed.filter(s => s.sec.group === 'federal').flatMap(s => s.items);
+  const stateItems = surveyed.filter(s => s.sec.group === 'state').flatMap(s => s.items);
+  if (fedItems.length) {
+    groups.push({ items: fedItems, basis: 'Federal: CMS Life Safety Code (K-tags) and Emergency Preparedness (E-tags), 42 CFR 483.90(a) and 483.73' });
+  }
+  if (stateItems.length) {
+    const pack = STATE_PACKS[surveyState.state];
+    groups.push({ items: stateItems, basis: 'State licensure: ' + pack.regulation + ' (' + pack.agency + ')' });
+  }
+  return groups.map(g => form2567(g.basis, g.items.filter(i => surveyState.responses[i.id].status === 'fail'))).join('');
+}
+
+function form2567(basis, fails) {
+  const cols = '<colgroup><col style="width:11%"><col style="width:40%"><col style="width:11%"><col style="width:28%"><col style="width:10%"></colgroup>';
+  let html = '<div class="print-page"><table class="f2567">' + cols + '<thead>' +
+    '<tr class="f-title"><td colspan="3"><div class="f-title-main">Statement of Deficiencies and Plan of Correction</div>' +
+      '<div class="f-title-sub">Mock survey in CMS-2567 format · ' + escapeHtml(basis) + '</div></td>' +
+      '<td colspan="2" class="f-title-mock">MOCK — NOT AN OFFICIAL SURVEY</td></tr>' +
+    '<tr>' +
+      '<td colspan="2">' + box2567('Name of provider or supplier', communityName()) + '</td>' +
+      '<td colspan="2">' + box2567('Street address, city, state, zip code', '', true) + '</td>' +
+      '<td>' + box2567('(X3) Date survey completed', formatShortDate(surveyState.date)) + '</td>' +
+    '</tr><tr>' +
+      '<td colspan="2">' + box2567('Surveyor', surveyState.surveyor) + '</td>' +
+      '<td colspan="2">' + box2567('(X2) Multiple construction — building / wing', '', true) + '</td>' +
+      '<td>' + box2567('Care levels', surveyState.careLevels.join(', ')) + '</td>' +
+    '</tr>' +
+    '<tr class="f-colhead">' +
+      '<th>(X4) ID prefix tag</th>' +
+      '<th>Summary statement of deficiencies (each deficiency must be preceded by full regulatory or LSC identifying information)</th>' +
+      '<th>ID prefix tag</th>' +
+      '<th>Provider\'s plan of correction (each corrective action should be cross-referenced to the appropriate deficiency)</th>' +
+      '<th>(X5) Completion date</th>' +
+    '</tr></thead><tbody>';
+
+  if (fails.length === 0) {
+    html += '<tr><td></td><td>No deficiencies were cited under this regulation set during the mock survey.</td><td></td><td></td><td></td></tr>';
+  }
+  fails.slice().sort(compareIds).forEach(item => {
+    const r = surveyState.responses[item.id];
+    const tag = displayTag(item);
+    const target = r.priority ? formatShortDate(addDays(surveyState.date, PRIORITY_DAYS[r.priority])) : '';
+    const reqLine = item.section.startsWith('S-') ? item.title : item.id + ' — ' + item.title + ' (' + item.cite + ')';
+    html += '<tr>' +
+      '<td class="f-tag">' + escapeHtml(tag) + '</td>' +
+      '<td><div class="f-req">' + escapeHtml(reqLine) + '</div>' +
+        '<div>' + escapeHtml(item.prompt) + '</div>' +
+        '<div class="f-evidence"><strong>This REQUIREMENT is not met as evidenced by:</strong></div>' +
+        '<div class="f-notes">' + (r.notes && r.notes.trim() ? escapeHtml(r.notes.trim()) : '<em>[No observation recorded]</em>') + '</div></td>' +
+      '<td class="f-tag">' + escapeHtml(tag) + '</td>' +
+      '<td><div class="f-poc-lines"></div></td>' +
+      '<td class="f-date">' + (target ? escapeHtml(target) + '<div class="f-date-hint">Target (' + escapeHtml(r.priority) + ')</div>' : '') + '</td>' +
+    '</tr>';
+  });
+  html += '</tbody></table>' +
+    '<div class="f2567-sign">' +
+      '<div><div class="sig-line"></div>Administrator or provider representative signature</div>' +
+      '<div><div class="sig-line"></div>Title</div>' +
+      '<div style="flex:0.6"><div class="sig-line"></div>(X6) Date</div>' +
+    '</div></div>';
+  return html;
+}
+
+function box2567(label, value, blank) {
+  return '<div class="f-box-label">' + escapeHtml(label) + '</div>' +
+    (blank ? '<div class="f-blank"></div>' : '<div class="f-box-value">' + escapeHtml(value) + '</div>');
+}
+
+function addDays(iso, days) {
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function formatShortDate(iso) {
+  return iso ? new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { year:'numeric', month:'2-digit', day:'2-digit' }) : '';
 }
 
 function metaRow(label, value) {
@@ -2181,8 +2345,7 @@ document.getElementById('section-panels').addEventListener('click', onPanelsClic
 document.getElementById('section-panels').addEventListener('input', onPanelsInput);
 document.getElementById('btn-rerandomize').addEventListener('click', rerandomize);
 document.getElementById('btn-back-setup').addEventListener('click', backToSetup);
-document.getElementById('btn-print-findings').addEventListener('click', () => printReport('findings'));
-document.getElementById('btn-print-full').addEventListener('click', () => printReport('full'));
+document.getElementById('btn-print').addEventListener('click', printSelected);
 initSetup();
 checkDraft();
 
