@@ -192,7 +192,7 @@ body {
 .form-input:focus, .form-select:focus {
   outline: none;
   border-color: var(--navy-light);
-  box-shadow: 0 0 0 3px rgba(27,58,107,0.12);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--navy) 15%, transparent);
 }
 .select-wrapper { position: relative; }
 .select-wrapper::after {
@@ -509,7 +509,7 @@ body {
   min-height: 72px;
   transition: border-color 0.15s;
 }
-.notes-field:focus { outline: none; border-color: var(--navy-light); box-shadow: 0 0 0 3px rgba(27,58,107,0.10); }
+.notes-field:focus { outline: none; border-color: var(--navy-light); box-shadow: 0 0 0 3px color-mix(in srgb, var(--navy) 12%, transparent); }
 
 #report-print { display: none; }
 
@@ -658,13 +658,17 @@ body {
 .print-watermark { display: none; }
 
 :root {
-  --navy: #1B3A6B;
-  --navy-dark: #122850;
-  --navy-light: #2A5298;
-  --gold: #C9A84C;
-  --gold-text: #8C6D1F;
-  --gold-light: #F0E2B0;
-  --gold-pale: #FAF6E8;
+  --navy: #161E69;
+  --navy-dark: #0F1550;
+  --navy-light: #2E3A94;
+  --gold: #E79023;
+  --gold-text: #955405;
+  --gold-light: #FBDDB0;
+  --gold-pale: #FEF5E8;
+  --header-org: #F9A33F;
+  --accent-btn-bg: #F9A33F;
+  --accent-btn-fg: #0F1550;
+  --accent-btn-hover: #E79023;
 }
 </style>
 <style id="print-page-style"></style>
