@@ -642,52 +642,81 @@ body {
   .sig-block { margin-bottom: 24pt; break-inside: avoid; }
   .sig-line { border-bottom: 1.5px solid #333; height: 28pt; margin-bottom: 4pt; width: 320pt; }
   .sig-sublabel { font-size: 8pt; color: #555; }
-
-  /* Watermark: fixed elements repeat on every printed page. */
-  .print-watermark {
-    display: block !important;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-35deg);
-    font-size: 36pt;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    line-height: 1.25;
-    text-align: center;
-    color: rgba(178, 31, 45, 0.13);
-    white-space: nowrap;
-    z-index: 1000;
-    pointer-events: none;
-  }
-
-  /* ---- Mock CMS-2567 layout ---- */
-  .f2567 { width: 100%; border-collapse: collapse; font-family: Arial, Helvetica, sans-serif; color: #000; table-layout: fixed; }
-  .f2567 thead { display: table-header-group; }
-  .f2567 th, .f2567 td { border: 1px solid #000; padding: 4pt 5pt; vertical-align: top; text-align: left; }
-  .f2567 .f-title td { border: none; padding: 0 0 6pt; }
-  .f2567 .f-title-main { font-size: 11pt; font-weight: 700; }
-  .f2567 .f-title-sub { font-size: 8pt; margin-top: 2pt; }
-  .f2567 .f-title-mock { font-size: 8pt; font-weight: 700; color: #B21F2D; text-align: right; white-space: nowrap; }
-  .f2567 .f-box-label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
-  .f2567 .f-box-value { font-size: 9pt; min-height: 12pt; margin-top: 2pt; }
-  .f2567 .f-blank { border-bottom: 1px solid #999; height: 12pt; margin-top: 2pt; }
-  .f2567 .f-colhead th { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; background: #EEE; line-height: 1.3; }
-  .f2567 tbody td { font-size: 8.5pt; line-height: 1.45; }
-  .f2567 tbody tr { break-inside: auto; page-break-inside: auto; }
-  .f2567 .f-tag { font-weight: 700; word-break: break-word; }
-  .f2567 .f-req { font-weight: 700; margin-bottom: 4pt; }
-  .f2567 .f-evidence { margin-top: 5pt; }
-  .f2567 .f-notes { white-space: pre-wrap; margin-top: 2pt; }
-  /* Real bordered lines: gradient rules print as thick gray bars in Chrome. */
-  .f2567 .f-poc-line { height: 15pt; border-bottom: 0.5pt solid #A0A0A0; }
-  .f2567 .f-date { font-size: 8pt; }
-  .f2567 .f-date-hint { font-size: 6.5pt; color: #555; margin-top: 2pt; }
-  .f2567-sign { margin-top: 18pt; break-inside: avoid; display: flex; gap: 24pt; font-size: 7pt; }
-  .f2567-sign > div { flex: 1; }
-  .f2567-sign .sig-line { width: auto; height: 22pt; }
 }
-.print-watermark { display: none; }
+
+/* ============================================================
+   MOCK 2567 SHEETS
+   Fixed letter-size sheets laid out by app.js (layout2567). These
+   rules apply on screen too, so the off-screen sandbox measures
+   with exactly the sizes the printer will use.
+   ============================================================ */
+/* Footer boxes are cleared in app.js (pageMarginCss), after the report footer rule. */
+@page f2567 {
+  size: letter;
+  margin: 0.5in;
+}
+.f2567-sandbox { position: absolute; left: -10000px; top: 0; visibility: hidden; }
+.f2567-page {
+  page: f2567;
+  width: 7.5in;
+  height: 9.9in;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #000;
+  break-after: page;
+  page-break-after: always;
+}
+.f2567-page:last-child { break-after: auto; page-break-after: auto; }
+.f2567-page .f-wm {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-size: 40pt;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  text-align: center;
+  white-space: nowrap;
+  color: rgba(178, 31, 45, 0.12);
+  z-index: 2;
+  pointer-events: none;
+}
+.f2567-page .f-grid { display: grid; grid-template-columns: 11% 40% 11% 28% 10%; }
+.f2567-page .f-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 12pt; padding-bottom: 6pt; }
+.f2567-page .f-title-main { font-size: 11pt; font-weight: 700; }
+.f2567-page .f-title-sub { font-size: 8pt; margin-top: 2pt; }
+.f2567-page .f-title-mock { font-size: 8pt; font-weight: 700; color: #B21F2D; white-space: nowrap; }
+.f2567-page .f-head { border-top: 1px solid #000; border-left: 1px solid #000; }
+.f2567-page .f-head > div { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 3pt 5pt; }
+.f2567-page .f-span2 { grid-column: span 2; }
+.f2567-page .f-box-label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+.f2567-page .f-box-value { font-size: 9pt; min-height: 11pt; margin-top: 2pt; }
+.f2567-page .f-blank { border-bottom: 1px solid #999; height: 11pt; margin-top: 2pt; }
+.f2567-page .f-colhead > div { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; background: #EEE; line-height: 1.3; }
+/* Column rules run from the header to the bottom of the sheet, as on the real form. */
+/* min-height: 0 holds the body to the sheet's leftover height, so layout2567 can detect overflow. */
+.f2567-page .f-body { flex: 1; min-height: 0; overflow: hidden; position: relative; border: 1px solid #000; border-top: none; }
+.f2567-page .f-rule { position: absolute; top: 0; bottom: 0; border-left: 1px solid #000; }
+.f2567-page .f-row { font-size: 8.5pt; line-height: 1.45; padding-top: 6pt; }
+.f2567-page .f-row > div { padding: 0 5pt; min-width: 0; }
+.f2567-page .f-c-tag, .f2567-page .f-c-tag2 { font-weight: 700; overflow-wrap: anywhere; }
+.f2567-page .f-cont { font-style: italic; color: #333; margin-bottom: 3pt; }
+.f2567-page .f-req { font-weight: 700; margin-bottom: 3pt; }
+.f2567-page .f-evidence { margin-top: 5pt; }
+.f2567-page .f-notes { white-space: pre-wrap; margin-top: 2pt; }
+.f2567-page .f-row-gap { height: 6pt; }
+/* Real bordered lines: gradient rules print as thick gray bars in Chrome. */
+.f2567-page .f-poc-line { height: 15pt; border-bottom: 0.5pt solid #A0A0A0; }
+.f2567-page .f-c-date { font-size: 8pt; }
+.f2567-page .f-date-hint { font-size: 6.5pt; color: #555; margin-top: 2pt; }
+.f2567-page .f-sign { display: grid; grid-template-columns: 2fr 1.4fr 1fr; gap: 16pt; font-size: 6.5pt; font-weight: 700; text-transform: uppercase; padding-top: 8pt; }
+.f2567-page .f-sign .sig-line { width: auto; border-bottom: 1px solid #000; height: 20pt; margin-bottom: 3pt; }
+.f2567-page .f-foot { display: flex; justify-content: space-between; gap: 12pt; font-size: 7pt; padding-top: 5pt; }
+.f2567-page .f-foot .f-pageno { font-weight: 700; }
 
 :root {
   --navy: #161E69;
@@ -2046,7 +2075,7 @@ function updateProgress() {
 /* ============================================================
    PRINT
    The full report and the mock 2567 can print separately or
-   together; every printed page carries the MOCK watermark.
+   together; only the 2567 sheets carry the MOCK watermark.
    ============================================================ */
 function printSelected() {
   const wantFull = document.getElementById('chk-print-full').checked;
@@ -2064,12 +2093,11 @@ function printSelected() {
   if (want2567 && noNotes > 0) warnings.push(noNotes + ' failed item' + (noNotes === 1 ? ' has' : 's have') + ' no observation notes for the 2567');
   if (warnings.length && !confirm('- ' + warnings.join('\n- ') + '\n\nPrint anyway?')) return;
 
-  let html = '<div class="print-watermark">MOCK<br>INTERNAL USE ONLY</div>';
-  if (wantFull) html += buildReportHtml(t, noPriority);
-  if (want2567) html += build2567Html();
-  document.getElementById('report-print').innerHTML = html;
-  document.getElementById('print-page-style').textContent = pageMarginCss();
-  whenImagesReady(document.getElementById('report-print')).then(() => window.print());
+  const report = document.getElementById('report-print');
+  report.innerHTML = wantFull ? buildReportHtml(t, noPriority) : '';
+  if (want2567) build2567Sheets().forEach(sheet => report.appendChild(sheet));
+  document.getElementById('print-page-style').textContent = pageMarginCss(want2567);
+  whenImagesReady(report).then(() => window.print());
 }
 
 /* Printing before the report's images load leaves them blank on the page. */
@@ -2082,12 +2110,17 @@ function logoImg(cls) {
   return CONFIG.logo ? '<img class="' + cls + '" src="' + escapeHtml(CONFIG.logo.src) + '" alt="' + escapeHtml(CONFIG.logo.alt) + '">' : '';
 }
 
-function pageMarginCss() {
+/* Report footer for the full report's pages. The 2567 sheets carry their own footer, so their named page
+   clears these boxes; that rule must come after this one, since Chrome lets the later margin-box rule win.
+   counter(pages) counts the whole print job, so "of N" is shown only when the report prints alone. */
+function pageMarginCss(with2567) {
   const footer = cssString(CONFIG.reportOrg + ' · Mock Life Safety Survey · ' + communityName() + ' · ' + formatDate(surveyState.date));
+  const pageNo = with2567 ? '"Page " counter(page)' : '"Page " counter(page) " of " counter(pages)';
   return '@page {' +
     ' @bottom-left { content: "' + footer + '"; font-family: Arial, sans-serif; font-size: 7.5pt; color: #666; }' +
-    ' @bottom-right { content: "Page " counter(page) " of " counter(pages); font-family: Arial, sans-serif; font-size: 7.5pt; color: #666; }' +
-    ' }';
+    ' @bottom-right { content: ' + pageNo + '; font-family: Arial, sans-serif; font-size: 7.5pt; color: #666; }' +
+    ' }' +
+    ' @page f2567 { @bottom-left { content: none; } @bottom-right { content: none; } }';
 }
 
 function reportHeader(rightText, withLogo = true) {
@@ -2244,11 +2277,14 @@ function printItem(item, sec) {
 /* ============================================================
    MOCK 2567 — Statement of Deficiencies and Plan of Correction
    One form per regulation set surveyed (federal and/or state),
-   failures only. The plan of correction column prints blank.
+   failures only. Laid out as fixed letter-size sheets like the
+   real form: the header repeats on every sheet, column rules run
+   to the bottom, and a deficiency that doesn't fit picks up on the
+   next sheet under its tag with "Continued From page N".
    ============================================================ */
 const PRIORITY_DAYS = { 'Immediate': 0, '30-Day': 30, '90-Day': 90 };
 
-function build2567Html() {
+function build2567Groups() {
   const groups = [];
   const surveyed = surveySections();
   const fedItems = surveyed.filter(s => s.sec.group === 'federal').flatMap(s => s.items);
@@ -2260,58 +2296,181 @@ function build2567Html() {
     const pack = STATE_PACKS[surveyState.state];
     groups.push({ items: stateItems, basis: 'State licensure: ' + pack.regulation + ' (' + pack.agency + ')' });
   }
-  return groups.map(g => form2567(g.basis, g.items.filter(i => surveyState.responses[i.id].status === 'fail'))).join('');
+  return groups.map(g => ({ basis: g.basis, fails: g.items.filter(i => surveyState.responses[i.id].status === 'fail').sort(compareIds) }));
 }
 
-function form2567(basis, fails) {
-  const cols = '<colgroup><col style="width:11%"><col style="width:40%"><col style="width:11%"><col style="width:28%"><col style="width:10%"></colgroup>';
-  let html = '<div class="print-page"><table class="f2567">' + cols + '<thead>' +
-    '<tr class="f-title"><td colspan="3"><div class="f-title-main">Statement of Deficiencies and Plan of Correction</div>' +
-      '<div class="f-title-sub">Mock survey in CMS-2567 format · ' + escapeHtml(basis) + '</div></td>' +
-      '<td colspan="2" class="f-title-mock">MOCK — NOT AN OFFICIAL SURVEY</td></tr>' +
-    '<tr>' +
-      '<td colspan="2">' + box2567('Name of provider or supplier', communityName()) + '</td>' +
-      '<td colspan="2">' + box2567('Street address, city, state, zip code', '', true) + '</td>' +
-      '<td>' + box2567('(X3) Date survey completed', formatShortDate(surveyState.date)) + '</td>' +
-    '</tr><tr>' +
-      '<td colspan="2">' + box2567('Surveyor', surveyState.surveyor) + '</td>' +
-      '<td colspan="2">' + box2567('(X2) Multiple construction — building / wing', '', true) + '</td>' +
-      '<td>' + box2567('Care levels', surveyState.careLevels.join(', ')) + '</td>' +
-    '</tr>' +
-    '<tr class="f-colhead">' +
-      '<th>(X4) ID prefix tag</th>' +
-      '<th>Summary statement of deficiencies (each deficiency must be preceded by full regulatory or LSC identifying information)</th>' +
-      '<th>ID prefix tag</th>' +
-      '<th>Provider\'s plan of correction (each corrective action should be cross-referenced to the appropriate deficiency)</th>' +
-      '<th>(X5) Completion date</th>' +
-    '</tr></thead><tbody>';
+/* Sheets are laid out in an off-screen sandbox that uses the print sizes, then handed back for printing. */
+function build2567Sheets() {
+  const sandbox = document.createElement('div');
+  sandbox.className = 'f2567-sandbox';
+  document.body.appendChild(sandbox);
+  const sheets = build2567Groups().flatMap(g => layout2567(sandbox, g.basis, g.fails));
+  sandbox.remove();
+  return sheets;
+}
 
-  if (fails.length === 0) {
-    html += '<tr><td></td><td>No deficiencies were cited under this regulation set during the mock survey.</td><td></td><td></td><td></td></tr>';
+function layout2567(sandbox, basis, fails) {
+  const sheets = [];
+  let body;
+  const newSheet = () => {
+    const sheet = document.createElement('div');
+    sheet.className = 'f2567-page';
+    sheet.innerHTML = sheet2567Html(basis, sheets.length === 0);
+    sandbox.appendChild(sheet);
+    sheets.push(sheet);
+    body = sheet.querySelector('.f-body');
+  };
+  const fits = row => row.offsetTop + row.offsetHeight <= body.clientHeight;
+  newSheet();
+
+  if (!fails.length) {
+    body.appendChild(row2567('', '<div>No deficiencies were cited under this regulation set during the mock survey.</div>', ''));
   }
-  fails.slice().sort(compareIds).forEach(item => {
-    const r = surveyState.responses[item.id];
+  fails.forEach(item => {
     const tag = displayTag(item);
-    const target = r.priority ? formatShortDate(addDays(surveyState.date, PRIORITY_DAYS[r.priority])) : '';
-    const reqLine = item.section.startsWith('S-') ? item.title : item.id + ' — ' + item.title + ' (' + item.cite + ')';
-    html += '<tr>' +
-      '<td class="f-tag">' + escapeHtml(tag) + '</td>' +
-      '<td><div class="f-req">' + escapeHtml(reqLine) + '</div>' +
-        '<div>' + escapeHtml(item.prompt) + '</div>' +
-        '<div class="f-evidence"><strong>This REQUIREMENT is not met as evidenced by:</strong></div>' +
-        '<div class="f-notes">' + (r.notes && r.notes.trim() ? escapeHtml(r.notes.trim()) : '<em>[No observation recorded]</em>') + '</div></td>' +
-      '<td class="f-tag">' + escapeHtml(tag) + '</td>' +
-      '<td>' + '<div class="f-poc-line"></div>'.repeat(6) + '</td>' +
-      '<td class="f-date">' + (target ? escapeHtml(target) + '<div class="f-date-hint">Target (' + escapeHtml(r.priority) + ')</div>' : '') + '</td>' +
-    '</tr>';
+    let blocks = deficiencyBlocks(item);
+    let fromPage = 0;
+    while (blocks.length) {
+      const row = row2567(tag, fromPage ? '<div class="f-cont">Continued From page ' + fromPage + '</div>' : '', fromPage ? '' : completionHtml(item));
+      body.appendChild(row);
+      const hadRows = body.querySelectorAll('.f-row').length > 1;
+      const res = fillBlocks(row.querySelector('.f-c-sum'), blocks, () => fits(row));
+      const tooLittle = res.whole === 0 && !res.partial;
+      // Don't strand a deficiency's heading at the foot of a sheet; start it on the next one instead.
+      const strandedStart = !fromPage && res.rest.length > 0 && res.whole < 2 && hadRows;
+      if ((tooLittle || strandedStart) && hadRows) {
+        row.remove();
+        newSheet();
+        continue;
+      }
+      if (tooLittle) {
+        // A block taller than an empty sheet: place it anyway rather than loop forever.
+        row.querySelector('.f-c-sum').appendChild(blockEl(res.rest.shift()));
+      }
+      addPocLines(row, () => fits(row));
+      blocks = res.rest;
+      if (blocks.length) {
+        fromPage = sheets.length;
+        newSheet();
+      }
+    }
   });
-  html += '</tbody></table>' +
-    '<div class="f2567-sign">' +
+  sheets.forEach((s, i) => {
+    s.querySelector('.f-pageno').textContent = 'If continuation sheet Page ' + (i + 1) + ' of ' + sheets.length;
+  });
+  return sheets;
+}
+
+function deficiencyBlocks(item) {
+  const r = surveyState.responses[item.id];
+  const notes = (r.notes || '').trim();
+  return [
+    { cls: 'f-req', text: item.section.startsWith('S-') ? item.title : item.id + ' — ' + item.title + ' (' + item.cite + ')' },
+    { cls: 'f-prompt', text: item.prompt },
+    { cls: 'f-evidence', html: '<strong>This REQUIREMENT is not met as evidenced by:</strong>' },
+    notes ? { cls: 'f-notes', text: notes } : { cls: 'f-notes', html: '<em>[No observation recorded]</em>' }
+  ];
+}
+
+function blockEl(b) {
+  const el = document.createElement('div');
+  el.className = b.cls;
+  if (b.html) el.innerHTML = b.html; else el.textContent = b.text;
+  return el;
+}
+
+/* Appends whole blocks while they fit, then as many words of the next text block as fit. */
+function fillBlocks(cell, blocks, fits) {
+  const rest = blocks.slice();
+  let whole = 0, partial = false;
+  while (rest.length) {
+    const b = rest[0];
+    const el = blockEl(b);
+    cell.appendChild(el);
+    if (fits()) { rest.shift(); whole++; continue; }
+    if (b.text) {
+      const words = b.text.match(/\S+\s*/g) || [];
+      let lo = 0, hi = words.length - 1;
+      while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2);
+        el.textContent = words.slice(0, mid).join('').trimEnd();
+        if (fits()) lo = mid; else hi = mid - 1;
+      }
+      if (lo > 0) {
+        el.textContent = words.slice(0, lo).join('').trimEnd();
+        rest[0] = Object.assign({}, b, { text: words.slice(lo).join('') });
+        partial = true;
+        break;
+      }
+    }
+    el.remove();
+    break;
+  }
+  return { rest, whole, partial };
+}
+
+function row2567(tag, sumHtml, dateHtml) {
+  const row = document.createElement('div');
+  row.className = 'f-row f-grid';
+  row.innerHTML =
+    '<div class="f-c-tag">' + escapeHtml(tag) + '</div>' +
+    '<div class="f-c-sum">' + sumHtml + '</div>' +
+    '<div class="f-c-tag2">' + escapeHtml(tag) + '</div>' +
+    '<div class="f-c-poc"></div>' +
+    '<div class="f-c-date">' + dateHtml + '</div>';
+  return row;
+}
+
+/* Writing lines for the plan of correction, about as tall as the deficiency text (at least two). */
+function addPocLines(row, fits) {
+  if (!row.querySelector('.f-c-tag2').textContent) return;
+  const poc = row.querySelector('.f-c-poc');
+  const target = row.querySelector('.f-c-sum').offsetHeight;
+  do {
+    poc.insertAdjacentHTML('beforeend', '<div class="f-poc-line"></div>');
+  } while (poc.offsetHeight < target);
+  // Trim lines that run past the text or the bottom of the sheet, keeping at least two where they fit.
+  while (poc.children.length > 2 && poc.offsetHeight > target + 1) poc.lastElementChild.remove();
+  while (poc.children.length && !fits()) poc.lastElementChild.remove();
+}
+
+function completionHtml(item) {
+  const r = surveyState.responses[item.id];
+  if (!r.priority) return '';
+  return escapeHtml(formatShortDate(addDays(surveyState.date, PRIORITY_DAYS[r.priority]))) +
+    '<div class="f-date-hint">Target (' + escapeHtml(r.priority) + ')</div>';
+}
+
+function sheet2567Html(basis, first) {
+  return '<div class="f-wm">MOCK<br>INTERNAL USE ONLY</div>' +
+    '<div class="f-title"><div><div class="f-title-main">Statement of Deficiencies and Plan of Correction</div>' +
+      '<div class="f-title-sub">Mock survey in CMS-2567 format · ' + escapeHtml(basis) + '</div></div>' +
+      '<div class="f-title-mock">MOCK — NOT AN OFFICIAL SURVEY</div></div>' +
+    '<div class="f-head f-grid">' +
+      '<div class="f-span2">' + box2567('Name of provider or supplier', communityName()) + '</div>' +
+      '<div class="f-span2">' + box2567('Street address, city, state, zip code', '', true) + '</div>' +
+      '<div>' + box2567('(X3) Date survey completed', formatShortDate(surveyState.date)) + '</div>' +
+      '<div class="f-span2">' + box2567('Surveyor', surveyState.surveyor) + '</div>' +
+      '<div class="f-span2">' + box2567('(X2) Multiple construction — building / wing', '', true) + '</div>' +
+      '<div>' + box2567('Care levels', surveyState.careLevels.join(', ')) + '</div>' +
+    '</div>' +
+    '<div class="f-head f-colhead f-grid" style="border-top:none">' +
+      '<div>(X4) ID prefix tag</div>' +
+      '<div>Summary statement of deficiencies (each deficiency must be preceded by full regulatory or LSC identifying information)</div>' +
+      '<div>ID prefix tag</div>' +
+      '<div>Provider\'s plan of correction (each corrective action should be cross-referenced to the appropriate deficiency)</div>' +
+      '<div>(X5) Completion date</div>' +
+    '</div>' +
+    '<div class="f-body">' +
+      ['11%', '51%', '62%', '90%'].map(x => '<div class="f-rule" style="left:' + x + '"></div>').join('') +
+    '</div>' +
+    (first ? '<div class="f-sign">' +
       '<div><div class="sig-line"></div>Administrator or provider representative signature</div>' +
       '<div><div class="sig-line"></div>Title</div>' +
-      '<div style="flex:0.6"><div class="sig-line"></div>(X6) Date</div>' +
-    '</div></div>';
-  return html;
+      '<div><div class="sig-line"></div>(X6) Date</div></div>' : '') +
+    '<div class="f-foot"><span>Mock form in CMS-2567 format · not an official survey</span>' +
+      '<span>' + escapeHtml(communityName() + ' · ' + formatShortDate(surveyState.date)) + '</span>' +
+      '<span class="f-pageno"></span></div>';
 }
 
 function box2567(label, value, blank) {
