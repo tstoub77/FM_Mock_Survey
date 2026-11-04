@@ -676,7 +676,8 @@ body {
   .f2567 .f-req { font-weight: 700; margin-bottom: 4pt; }
   .f2567 .f-evidence { margin-top: 5pt; }
   .f2567 .f-notes { white-space: pre-wrap; margin-top: 2pt; }
-  .f2567 .f-poc-lines { height: 84pt; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 13pt, #BBB 13pt, #BBB 14pt); }
+  /* Real bordered lines: gradient rules print as thick gray bars in Chrome. */
+  .f2567 .f-poc-line { height: 15pt; border-bottom: 0.5pt solid #A0A0A0; }
   .f2567 .f-date { font-size: 8pt; }
   .f2567 .f-date-hint { font-size: 6.5pt; color: #555; margin-top: 2pt; }
   .f2567-sign { margin-top: 18pt; break-inside: avoid; display: flex; gap: 24pt; font-size: 7pt; }
@@ -2297,7 +2298,7 @@ function form2567(basis, fails) {
         '<div class="f-evidence"><strong>This REQUIREMENT is not met as evidenced by:</strong></div>' +
         '<div class="f-notes">' + (r.notes && r.notes.trim() ? escapeHtml(r.notes.trim()) : '<em>[No observation recorded]</em>') + '</div></td>' +
       '<td class="f-tag">' + escapeHtml(tag) + '</td>' +
-      '<td><div class="f-poc-lines"></div></td>' +
+      '<td>' + '<div class="f-poc-line"></div>'.repeat(6) + '</td>' +
       '<td class="f-date">' + (target ? escapeHtml(target) + '<div class="f-date-hint">Target (' + escapeHtml(r.priority) + ')</div>' : '') + '</td>' +
     '</tr>';
   });
