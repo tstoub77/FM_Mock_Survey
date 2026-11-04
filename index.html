@@ -117,7 +117,18 @@ body {
   padding: 12px 20px;
   gap: 12px;
 }
-.header-text { display: flex; flex-direction: column; }
+.header-logo-plate {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 5px 9px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.header-logo-plate[hidden] { display: none; }
+.header-logo-plate img { display: block; height: 34px; width: auto; }
+@media (max-width: 480px) { .header-logo-plate img { height: 26px; } }
+.header-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .header-org {
   font-size: 0.78rem;
   font-weight: 700;
@@ -527,6 +538,9 @@ body {
     align-items: flex-end;
     gap: 12pt;
   }
+  .print-header-brand { display: flex; align-items: flex-end; gap: 10pt; }
+  .print-header-logo { height: 30pt; width: auto; display: block; }
+  .cover-logo { height: 64pt; width: auto; display: block; margin: 0 auto 22pt; }
   .print-org  { font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--navy); }
   .print-dept { font-size: 11pt; font-weight: 700; color: var(--navy); }
   .print-header-right { font-size: 8pt; color: #555; text-align: right; }
@@ -659,6 +673,7 @@ body {
 
 <header id="app-header">
   <div class="header-inner">
+    <div class="header-logo-plate" id="header-logo-plate" hidden><img id="header-logo" alt=""></div>
     <div class="header-text">
       <div class="header-org" id="header-org"></div>
       <div class="header-dept" id="header-dept"></div>
@@ -785,6 +800,11 @@ const CONFIG = {
   "reportOrg": "Franciscan Ministries | Plant Operations",
   "headerTitle": "Mock Life Safety Survey",
   "badge": "v2.0",
+  "logo": {
+    "src": "logo.png",
+    "alt": "Franciscan Ministries",
+    "source": "https://franciscanministries.org/"
+  },
   "draftKey": "fm_lsc_survey_draft",
   "showCommunityAbbr": true,
   "careLevels": [
@@ -1554,7 +1574,16 @@ function newSurveyState() {
    SETUP SCREEN
    ============================================================ */
 function initSetup() {
-  document.getElementById('header-org').textContent   = CONFIG.orgName + (CONFIG.deptName ? ' | ' + CONFIG.deptName : '');
+  if (CONFIG.logo) {
+    const img = document.getElementById('header-logo');
+    img.src = CONFIG.logo.src;
+    img.alt = CONFIG.logo.alt;
+    document.getElementById('header-logo-plate').hidden = false;
+  }
+  /* With a logo the org name is already shown, so the text line carries only the department. */
+  document.getElementById('header-org').textContent = CONFIG.logo
+    ? (CONFIG.deptName || '')
+    : CONFIG.orgName + (CONFIG.deptName ? ' | ' + CONFIG.deptName : '');
   document.getElementById('header-dept').textContent  = CONFIG.headerTitle;
   document.getElementById('header-badge').textContent = CONFIG.badge;
 
@@ -1998,7 +2027,17 @@ function printSelected() {
   if (want2567) html += build2567Html();
   document.getElementById('report-print').innerHTML = html;
   document.getElementById('print-page-style').textContent = pageMarginCss();
-  window.print();
+  whenImagesReady(document.getElementById('report-print')).then(() => window.print());
+}
+
+/* Printing before the report's images load leaves them blank on the page. */
+function whenImagesReady(root) {
+  return Promise.all([...root.querySelectorAll('img')].map(img =>
+    img.complete ? null : new Promise(res => { img.onload = img.onerror = res; })));
+}
+
+function logoImg(cls) {
+  return CONFIG.logo ? '<img class="' + cls + '" src="' + escapeHtml(CONFIG.logo.src) + '" alt="' + escapeHtml(CONFIG.logo.alt) + '">' : '';
 }
 
 function pageMarginCss() {
@@ -2009,10 +2048,10 @@ function pageMarginCss() {
     ' }';
 }
 
-function reportHeader(rightText) {
-  return '<div class="print-header"><div>' +
+function reportHeader(rightText, withLogo = true) {
+  return '<div class="print-header"><div class="print-header-brand">' + (withLogo ? logoImg('print-header-logo') : '') + '<div>' +
     '<div class="print-org">' + escapeHtml(CONFIG.reportOrg) + '</div>' +
-    '<div class="print-dept">Mock Life Safety Survey</div></div>' +
+    '<div class="print-dept">Mock Life Safety Survey</div></div></div>' +
     '<div class="print-header-right">' + escapeHtml(rightText) + '</div></div>';
 }
 
@@ -2039,8 +2078,8 @@ function buildReportHtml(t, noPriority) {
   let html = '';
 
   /* Cover */
-  html += '<div class="print-page">' + reportHeader(reportType) +
-    '<div class="cover-body">' +
+  html += '<div class="print-page">' + reportHeader(reportType, false) +
+    '<div class="cover-body">' + logoImg('cover-logo') +
     '<div class="cover-title">Mock Life Safety Survey</div>' +
     '<div class="cover-subtitle">Internal Preparedness Assessment — ' + reportType + '</div>' +
     '<table class="cover-meta-table"><tbody>' +
